@@ -1,0 +1,15 @@
+# -*- encoding: utf-8 -*-
+import sys
+sys.path.append("/Users/wang 1/researchDemo/researchDemo/Research")
+
+from django.shortcuts import render
+from django.views.decorators import csrf
+# import stop_words 
+from researchTest import get_id
+
+# get user_name
+def compute(request):
+    ctx = {}
+    if request.POST:
+        ctx['rlt'] = get_id("user_name")
+    return render(request, "main.html", ctx)

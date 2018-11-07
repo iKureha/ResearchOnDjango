@@ -1,0 +1,70 @@
+<!DOCTYPE HTML>
+<HTML>
+  <HEAD>
+    <META CHARSET="UTF-8">
+    <TITLE>RESEARCH</TITLE>
+    <style type="text/css">
+      
+      #box
+      {
+        background:#F5F5F5;
+        width:350px;
+        height:120px;
+        padding-top:30px;
+        margin-left:40%;
+        margin-top:60px;
+        box-shadow:0px 0px 40px #B0C4DE;
+      }
+
+      #number
+      {
+        width:350px;
+        padding-top:10px;
+        margin-left:41%;
+        margin-top:20px;
+      }
+
+      #lda_result, #cos_result
+      {
+        background:#F5F5F5;
+        width:600px;
+        padding: 10px 10px 10px 10px;
+        margin-left:30%;
+        margin-top:20px;
+        box-shadow:0px 0px 40px #B0C4DE;
+      }
+    
+    </style>
+  </HEAD>
+
+  <BODY bgcolor="#F5F5DC">
+    <div id="box">
+    <FORM ACTION="compute" METHOD="POST">
+      {% csrf_token %}
+      <center><INPUT TYPE="TEXT" NAME="user_name"><br><br>
+      <INPUT TYPE="SUBMIT" VALUE="START"></center>
+    </FORM>
+    </div>
+    
+    <div id="number">{{ num }}</div>
+    {% ifequal flag 1 %}
+    <div id="lda_result">
+      <p>Topic List:</p>
+      <ol>
+        {% for topic in lda %}
+        <li>{{ topic }}</li>
+        {% endfor %}
+      </ol>
+    </div>
+
+    <div id="cos_result">
+      <p>Cosine Similarity List:</p>
+      <ol>
+        {% for cal in cos %}
+        <li>{{ cal }}</li>
+        {% endfor %}
+      </ol>
+    </div>
+    {% endifequal %}
+  </BODY>
+</HTML>
