@@ -6,6 +6,8 @@ import twitterAPIKey
 import stop_words
 import re
 import numpy as np
+from langdetect import detect
+from janome.tokenizer import Tokenizer
 from sklearn.feature_extraction.text import CountVectorizer
 from sklearn.decomposition import LatentDirichletAllocation
 from sklearn.metrics.pairwise import cosine_similarity
@@ -34,6 +36,13 @@ def number_of_following(user_name):
     twitter_name = user_name
     following_list = api.friends_ids(screen_name=twitter_name)
     return user_name + " has followed " + str(len(following_list)) + " accounts."
+
+
+###################################################
+# Get tweets from target user
+def Tweets(user_name):
+    user_tweets = api.user_timeline(screen_name=user_name, count=500)
+    return user_tweets
 
 
 ###################################################
@@ -67,14 +76,32 @@ class TimeLineContent:
 
 
 ###################################################
+# use Jnome to process Japanese
+def process_jp(timeline):
+    t = Tokenizer()
+    new_time_line = [token.surface for token in t.tokenize(timeline) if token.part_of_speech.split(',')[0] in ["名詞", "形容詞"]]
+    return new_time_line
+
+
+###################################################
 # delete not English words
 def englishlize(textList):
     temp = []
     for i in textList:
         temp2 = []
+        print(i)
         for n in i.split(" "):
             if re.match("^[@#]*[A-Za-z0-9]+$", n):
                 temp2.append(n)
+            else:
+                try:
+                    detect(n)
+                except:
+                    pass
+                else:
+                    if detect(n) == 'jp':
+                        temp.append(" ".join(process_jp(n)))
+
         temp.append(" ".join(temp2))
     return temp
 
@@ -83,11 +110,22 @@ def englishlize(textList):
 # Get favorite contents
 def favorites(account_id):
     favorites_list = []
+
     for i in api.favorites(id=account_id):
-        vect = CountVectorizer(max_features=150, stop_words=stop)
-        i = englishlize(i.text.replace('\n', ' ').split(' '))
-        vect.fit_transform(i)
-        favorites_list.append(" ".join(vect.get_feature_names()))
+        if i.text:
+            if detect(i.text) == 'en':
+                vect = CountVectorizer(max_features=140, stop_words=stop)
+                i = englishlize(i.text.replace('\n', ' ').split(' '))
+                vect.fit_transform(i)
+                favorites_list.append(" ".join(vect.get_feature_names()))
+
+            elif detect(i.text) == 'jp':
+                temp = process_jp(i)
+                favorites_list.append(temp)
+
+            else:
+                pass
+
     print(favorites_list)
     return favorites_list
 
@@ -106,8 +144,24 @@ def lda_clustering(new_timeline, n=5):
     #               'doc_topic_prior': [0.001, 0.01, 0.05, 0.1, 0.2],
     #               'topic_word_prior': [0.001, 0.01, 0.05, 0.1, 0.2],
     #               'max_iter': [1000]}
-    vect = CountVectorizer(max_features=40000, min_df=.1, stop_words=stop)
+    # print(englishlize(new_timeline))
+
+    # for i in new_timeline:
+    #     for_lda = []
+    #     if i:
+    #         if detect(i) == 'en':
+    #             temp = englishlize(new_timeline)
+    #             for_lda.append(temp)
+    #             print(temp)
+    #
+    #         elif detect(i) == 'jp':
+    #             temp = " ".join(process_jp(i))
+    #             for_lda.append(temp)
+    #         else:
+    #             pass
+
     temp = englishlize(new_timeline)
+    vect = CountVectorizer(max_features=40000, min_df=.1, stop_words=stop)
     X = vect.fit_transform(temp)
     #################
     # LDA
@@ -171,19 +225,44 @@ def runLDA(user_name):
     return topic_list
 
 
-
+###################################################
+# calculate cosine similarity
 def runCos(user_name, topic_list):
     topic_index = 0
     favorites_list = favorites(user_name)
     result = []
     for i in topic_list:
         print('\nTopic #', topic_index, '***************')
-        result.append("Cosine similarity is " + str(cos_similarity(i, favorites_list)[0][1]))
+        result.append("Topic " + str(topic_index) + "'s Cosine similarity is " + str(cos_similarity(i, favorites_list)[0][1]))
         print("Cosine similarity is", cos_similarity(i, favorites_list)[0][1])
         topic_index += 1
     return result
 
 
+###################################################
+# calculate tf
+def runTF(user_name, topic_list):
+    topic_index = 0
+    favorites_list = favorites(user_name)
+    result = []
+    temp = " ".join(favorites_list).split(' ')
+    for i in topic_list:
+        temp_topic_list = i.split(' ')
+        # print(temp)
+        # print(temp_topic_list)
+        sum_tf = 0
+        for j in temp_topic_list:
+            if temp.count(j) != 0:
+                sum_tf += temp_topic_list.count(j) / len(temp)
+        print('\nTopic #', topic_index, '***************')
+        result.append("Topic " + str(topic_index) + "'s TF is " + str(sum_tf))
+        print("TF is", str(sum_tf))
+        topic_index += 1
+    return result
+
+
+###################################################
+# read local test data
 def local_test():
     f = open("/Users/wang 1/researchDemo/researchDemo/Research/timeline.txt", "r+")
     text = f.read()

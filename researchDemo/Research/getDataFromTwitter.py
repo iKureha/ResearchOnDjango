@@ -1,11 +1,12 @@
 # coding: utf-8
 
 import tweepy
+import importlib
 # import _mysql
 import sys
 import twitterAPIKey as tk
 
-reload(sys)
+importlib.reload(sys)
 sys.setdefaultencoding('utf8')
 
 

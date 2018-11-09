@@ -15,13 +15,14 @@ def compute(request):
 
         #####################
         # for real, get data from twitter
-        return_to_main['lda'] = runLDA(request.POST["user_name"])
+        # return_to_main['lda'] = runLDA(request.POST["user_name"])
 
         #####################
         # for show, using local content
-        #timeline = local_test()
+        return_to_main['lda'] = lda_clustering(local_test())
 
         #return_to_main["lda"] = lda_clustering(timeline)
+        return_to_main['TF'] = runTF(request.POST["user_name"], return_to_main['lda'])
         return_to_main['cos'] = runCos(request.POST["user_name"], return_to_main['lda'])
         return_to_main['flag'] = 1
     return render(request, "main.html", return_to_main)
